@@ -4,14 +4,20 @@ import 'package:flutter/gestures.dart';
 import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
 import 'components/fly.dart';
+import 'components/backyard.dart';
 import 'dart:math';
+import 'components/house_fly.dart';
+import 'components/agile_fly.dart';
+import 'components/drooler_fly.dart';
+import 'components/hungry_fly.dart';
+import 'components/macho_fly.dart';
 
 class LangawGame extends Game with TapDetector {
   Size screenSize;
   double tileSize;
   List<Fly> flies;
   Random rnd;
-  bool hasWon = false;
+  Backyard background;
 
   LangawGame() {
     initialize();
@@ -21,23 +27,35 @@ class LangawGame extends Game with TapDetector {
     flies = List<Fly>();
     rnd = Random();
     resize(await Flame.util.initialDimensions());
-
+    background = Backyard(this);
     spawnFly();
   }
 
   void spawnFly() {
-    double x = rnd.nextDouble() * (screenSize.width - tileSize);
-    double y = rnd.nextDouble() * (screenSize.height - tileSize);
-    flies.add(Fly(this, x, y));
+    double x = rnd.nextDouble() * (screenSize.width - (tileSize * 2.025));
+    double y = rnd.nextDouble() * (screenSize.height - (tileSize * 2.025));
+    switch (rnd.nextInt(5)) {
+      case 0:
+        flies.add(HouseFly(this, x, y));
+        break;
+      case 1:
+        flies.add(DroolerFly(this, x, y));
+        break;
+      case 2:
+        flies.add(AgileFly(this, x, y));
+        break;
+      case 3:
+        flies.add(MachoFly(this, x, y));
+        break;
+      case 4:
+        flies.add(HungryFly(this, x, y));
+        break;
+    }
   }
 
   void render(Canvas canvas) {
     // Background
-    Rect bgRect = Rect.fromLTWH(0, 0, screenSize.width, screenSize.height);
-    Paint bgPaint = Paint();
-    bgPaint.color = Color(0xff576574);
-    canvas.drawRect(bgRect, bgPaint);
-
+    background.render(canvas);
     flies.forEach((Fly fly) => fly.render(canvas));
   }
 
@@ -51,8 +69,9 @@ class LangawGame extends Game with TapDetector {
     tileSize = screenSize.width / 9;
     super.resize(size);
   }
-    @override
-    void onTapDown(TapDownDetails d) {
+
+  @override
+  void onTapDown(TapDownDetails d) {
     flies.forEach((Fly fly) {
       if (fly.flyRect.contains(d.globalPosition)) {
         fly.onTapDown();
