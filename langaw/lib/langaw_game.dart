@@ -11,6 +11,15 @@ import 'components/agile_fly.dart';
 import 'components/drooler_fly.dart';
 import 'components/hungry_fly.dart';
 import 'components/macho_fly.dart';
+import 'view.dart';
+import 'views/home_view.dart';
+import 'views/lost_view.dart';
+import 'components/start_button.dart';
+import 'controllers/spawner.dart';
+import 'components/credits_button.dart';
+import 'components/help_button.dart';
+import 'views/credits_view.dart';
+import 'views/help_view.dart';
 
 class LangawGame extends Game with TapDetector {
   Size screenSize;
@@ -18,6 +27,15 @@ class LangawGame extends Game with TapDetector {
   List<Fly> flies;
   Random rnd;
   Backyard background;
+  View activeView = View.home;
+  HomeView homeView;
+  StartButton startButton;
+  LostView lostView;
+  FlySpawner spawner;
+  HelpButton helpButton;
+  CreditsButton creditsButton;
+  HelpView helpView;
+  CreditsView creditsView;
 
   LangawGame() {
     initialize();
@@ -27,8 +45,16 @@ class LangawGame extends Game with TapDetector {
     flies = List<Fly>();
     rnd = Random();
     resize(await Flame.util.initialDimensions());
+
     background = Backyard(this);
-    spawnFly();
+    homeView = HomeView(this);
+    startButton = StartButton(this);
+    lostView = LostView(this);
+    spawner = FlySpawner(this);
+    helpButton = HelpButton(this);
+    creditsButton = CreditsButton(this);
+    helpView = HelpView(this);
+    creditsView = CreditsView(this);
   }
 
   void spawnFly() {
@@ -56,12 +82,28 @@ class LangawGame extends Game with TapDetector {
   void render(Canvas canvas) {
     // Background
     background.render(canvas);
+    // Flies
     flies.forEach((Fly fly) => fly.render(canvas));
+    // Title
+    if (activeView == View.home) homeView.render(canvas);
+    // Start button
+    if (activeView == View.home || activeView == View.lost) {
+      helpButton.render(canvas);
+      creditsButton.render(canvas);
+      startButton.render(canvas);
+    }
+    // Lost game blip
+    if (activeView == View.lost) lostView.render(canvas);
+    // help window
+    if (activeView == View.help) helpView.render(canvas);
+    // credits window
+    if (activeView == View.credits) creditsView.render(canvas);
   }
 
   void update(double t) {
     flies.forEach((Fly fly) => fly.update(t));
     flies.removeWhere((Fly fly) => fly.isOffScreen);
+    spawner.update(t);
   }
 
   void resize(Size size) {
@@ -72,10 +114,49 @@ class LangawGame extends Game with TapDetector {
 
   @override
   void onTapDown(TapDownDetails d) {
-    flies.forEach((Fly fly) {
-      if (fly.flyRect.contains(d.globalPosition)) {
-        fly.onTapDown();
+    bool isHandled = false;
+
+    if (!isHandled) {
+      if (activeView == View.help || activeView == View.credits) {
+        activeView = View.home;
+        isHandled = true;
       }
-    });
+    }
+
+    if (!isHandled && startButton.rect.contains(d.globalPosition)) {
+      if (activeView == View.home || activeView == View.lost) {
+        startButton.onTapDown();
+        isHandled = true;
+      }
+    }
+    // help button
+    if (!isHandled && helpButton.rect.contains(d.globalPosition)) {
+      if (activeView == View.home || activeView == View.lost) {
+        helpButton.onTapDown();
+        isHandled = true;
+      }
+    }
+
+// credits button
+    if (!isHandled && creditsButton.rect.contains(d.globalPosition)) {
+      if (activeView == View.home || activeView == View.lost) {
+        creditsButton.onTapDown();
+        isHandled = true;
+      }
+    }
+
+    if (!isHandled) {
+      bool didHitAFly = false;
+      flies.forEach((Fly fly) {
+        if (fly.flyRect.contains(d.globalPosition)) {
+          fly.onTapDown();
+          isHandled = true;
+          didHitAFly = true;
+        }
+      });
+      if (activeView == View.playing && !didHitAFly) {
+        activeView = View.lost;
+      }
+    }
   }
 }
