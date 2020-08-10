@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flame/sprite.dart';
-import '../langaw_game.dart';
-import '../view.dart';
+import 'package:langaw/langaw-game.dart';
+import 'package:langaw/view.dart';
 
 class HelpButton {
   final LangawGame game;
